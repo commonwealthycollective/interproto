@@ -254,12 +254,12 @@ export default function ActionDrawer({ drawerAnim }: ActionDrawerProps) {
     <View style={{ flex: 1 }}>
       <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled">
         <View style={{ padding: 16, paddingTop: insets.top + 16 }}>
-          <XStack style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ color: theme.color12.val, fontWeight: '700', fontSize: 18 }}>New Post</Text>
-            <TouchableOpacity onPress={hideActionDrawerLocal}>
-              <Icon name="xmark" size={24} color={accent} />
+          <View style={{ position: 'absolute', top: insets.top + 8, right: 12, zIndex: 10 }}>
+            <TouchableOpacity onPress={hideActionDrawerLocal} style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
+              <Icon name="close" size={24} color={accent} strokeWidth={1.875} />
             </TouchableOpacity>
-          </XStack>
+          </View>
+          <Text style={{ color: theme.color12.val, fontWeight: '700', fontSize: 18, marginBottom: 16 }}>New Post</Text>
 
           {state.quotedPost && (
             <View style={{ marginBottom: 12, padding: 12, borderRadius: 8, borderWidth: 1, borderColor: accentMuted }}>

@@ -4,14 +4,19 @@ import { Text, useTheme } from 'tamagui'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useNavigation } from '../context/NavigationContext'
 import { useAccent } from '../hooks/useAccent'
-import { MOCK_VAULTS, TOP_BAR_HEIGHT, PILL_HEIGHT, PILL_MARGIN_BOTTOM } from '../constants'
+import { SUB_VIEW_IDS, MOCK_VAULTS, TOP_BAR_HEIGHT, PILL_HEIGHT } from '../constants'
 import Icon from './Icon'
+import type { ViewId } from '../types'
+
+const isSubView = (v: string) => SUB_VIEW_IDS.includes(v as ViewId)
 
 const TopBar = React.memo(function TopBar() {
   const theme = useTheme()
   const { accent } = useAccent()
   const { state, toggleMenu, toggleSearch, toggleFeedPicker } = useNavigation()
   const insets = useSafeAreaInsets()
+
+  const onSubView = isSubView(state.currentView)
 
   const vaultName = state.currentVaultId
     ? MOCK_VAULTS.find(v => v.id === state.currentVaultId)?.name ?? 'All Communities'
@@ -28,27 +33,43 @@ const TopBar = React.memo(function TopBar() {
       ]}
     >
       <View style={styles.row}>
-        <TouchableOpacity onPress={toggleMenu} style={styles.iconBtn}>
-          <Icon name="menu" size={22} color={accent} strokeWidth={1.875} />
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={toggleFeedPicker} style={styles.pill}>
-          <Text style={[styles.pillText, { color: accent }]} numberOfLines={1}>
-            {vaultName}
-          </Text>
-        </TouchableOpacity>
-
-        <View style={styles.rightIcons}>
-          {state.showFeedPicker ? (
-            <TouchableOpacity onPress={toggleSearch} style={styles.iconBtn}>
-              <Icon name="plus" size={22} color={accent} strokeWidth={1.875} />
+        {onSubView ? (
+          <>
+            <TouchableOpacity onPress={toggleMenu} style={[styles.iconBtn, { backgroundColor: theme.background.val + 'CC' }]}>
+              <Icon name="arrow-back" size={22} color={accent} strokeWidth={1.875} />
             </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={toggleSearch} style={styles.iconBtn}>
-              <Icon name={state.showSearch ? 'close' : 'search'} size={22} color={accent} strokeWidth={1.875} />
+            <View style={styles.centerTitle}>
+              <Text style={[styles.titleText, { color: accent }]} numberOfLines={1}>
+                {state.currentView}
+              </Text>
+            </View>
+            <View style={styles.iconBtn} />
+          </>
+        ) : (
+          <>
+            <TouchableOpacity onPress={toggleMenu} style={[styles.iconBtn, { backgroundColor: theme.background.val + 'CC' }]}>
+              <Icon name="menu" size={22} color={accent} strokeWidth={1.875} />
             </TouchableOpacity>
-          )}
-        </View>
+
+            <TouchableOpacity onPress={toggleFeedPicker} style={[styles.pill, { backgroundColor: theme.background.val + 'CC' }]}>
+              <Text style={[styles.pillText, { color: accent }]} numberOfLines={1}>
+                {vaultName}
+              </Text>
+            </TouchableOpacity>
+
+            <View style={styles.rightIcons}>
+              {state.showFeedPicker ? (
+                <TouchableOpacity onPress={toggleSearch} style={[styles.iconBtn, { backgroundColor: theme.background.val + 'CC' }]}>
+                  <Icon name="plus" size={22} color={accent} strokeWidth={1.875} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity onPress={toggleSearch} style={[styles.iconBtn, { backgroundColor: theme.background.val + 'CC' }]}>
+                  <Icon name={state.showSearch ? 'close' : 'search'} size={22} color={accent} strokeWidth={1.875} />
+                </TouchableOpacity>
+              )}
+            </View>
+          </>
+        )}
       </View>
     </View>
   )
@@ -73,17 +94,26 @@ const styles = StyleSheet.create({
   iconBtn: {
     width: 40,
     height: 40,
+    borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
   },
+
+  centerTitle: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
   pill: {
-    backgroundColor: '#FFFCF9CC',
     height: PILL_HEIGHT,
     paddingHorizontal: 16,
     borderRadius: PILL_HEIGHT / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: PILL_MARGIN_BOTTOM,
   },
   pillText: {
     fontSize: 14,

@@ -13,7 +13,6 @@ import NewsView from '../views/NewsView'
 import CommerceView from '../views/CommerceView'
 import VaultsView from '../views/VaultsView'
 import MessagesView from '../views/MessagesView'
-import GroupsView from '../views/GroupsView'
 import MapsView from '../views/MapsView'
 import NotificationsView from '../views/NotificationsView'
 import LikedView from '../views/LikedView'
@@ -94,7 +93,7 @@ export default function AppShell() {
     if (state.showMenu) {
       Animated.timing(menuAnim, { toValue: 1, duration: 250, useNativeDriver: true }).start()
     } else {
-      Animated.timing(menuAnim, { toValue: 0, duration: 200, useNativeDriver: true }).start()
+      Animated.timing(menuAnim, { toValue: 0, duration: 100, useNativeDriver: true }).start()
     }
   }, [state.showMenu])
 
@@ -176,8 +175,6 @@ const makeFilterProps = useCallback((
         return <VaultsView />
       case 'messages':
         return <MessagesView />
-      case 'groups':
-        return <GroupsView />
       case 'locations':
         return null
       case 'notifications':

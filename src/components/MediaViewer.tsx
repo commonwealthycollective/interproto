@@ -1,7 +1,10 @@
 import React, { useRef, useState } from 'react'
-import { Dimensions, Modal, FlatList, TouchableOpacity, View } from 'react-native'
+import { Dimensions, Modal, FlatList, TouchableOpacity, View, Image } from 'react-native'
+import { Text, useTheme } from 'tamagui'
 import { useVideoPlayer, VideoView } from 'expo-video'
+import { useAccent } from '../hooks/useAccent'
 import type { PostMedia } from '../types'
+import Icon from './Icon'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 
@@ -9,10 +12,30 @@ interface MediaViewerProps {
   media: PostMedia[]
   initialIndex: number
   onClose: () => void
+  post?: {
+    id: string
+    likes: number
+    comments: number
+    reposts: number
+  }
+  isLiked?: boolean
+  currentLikes?: number
+  currentReposts?: number
+  onLike?: () => void
+  onComment?: () => void
+  onQuote?: () => void
+  onRepostOnly?: () => void
 }
 
-export default function MediaViewer({ media, initialIndex, onClose }: MediaViewerProps) {
+export default function MediaViewer({ media, initialIndex, onClose, post, isLiked, currentLikes, currentReposts, onLike, onComment, onQuote, onRepostOnly }: MediaViewerProps) {
+  const theme = useTheme()
+  const { accent } = useAccent()
   const flatListRef = useRef<FlatList>(null)
+  const [showRepostModal, setShowRepostModal] = useState(false)
+
+  const handleRepostPress = () => {
+    setShowRepostModal(true)
+  }
 
   return (
     <Modal visible animationType="fade" onRequestClose={onClose}>
@@ -40,11 +63,60 @@ export default function MediaViewer({ media, initialIndex, onClose }: MediaViewe
               <VideoPlayerItem uri={item.uri} />
             ) : (
               <View style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT, alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: '100%', height: '100%', backgroundColor: '#000' }} />
+                <Image source={{ uri: item.uri }} style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT * 0.6 }} resizeMode="contain" />
               </View>
             )
           }
         />
+
+        {post && onLike && onComment && (
+          <View style={{ position: 'absolute', bottom: 100, left: 0, right: 0, alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 24, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 24, paddingHorizontal: 20, paddingVertical: 10 }}>
+              <TouchableOpacity onPress={onLike} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Icon
+                  name={isLiked ? 'heart-solid' : 'heart-outline'}
+                  size={22}
+                  color={isLiked ? '#ff3b30' : '#fff'}
+                  strokeWidth={2.4}
+                />
+                <Text style={{ color: isLiked ? '#ff3b30' : '#fff', fontSize: 14, fontWeight: '600' }}>{currentLikes ?? post.likes}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onComment} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Icon name="chatbubble-outline" size={22} color="#fff" strokeWidth={2.4} />
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{post.comments}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={handleRepostPress} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Icon name="repeat" size={22} color="#fff" strokeWidth={2.4} />
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{currentReposts ?? post.reposts}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        <Modal visible={showRepostModal} transparent animationType="fade" onRequestClose={() => setShowRepostModal(false)}>
+          <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setShowRepostModal(false)}>
+            <View style={{ backgroundColor: 'rgba(0,0,0,0.4)', position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
+            <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#1C1C1E', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 40 }}>
+              <Text style={{ color: '#fff', fontWeight: '700', fontSize: 18, marginBottom: 16 }}>Repost</Text>
+              <TouchableOpacity
+                onPress={() => { setShowRepostModal(false); onQuote?.() }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.1)' }}
+              >
+                <Icon name="quote-message" size={22} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 16 }}>Quote</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => { setShowRepostModal(false); onRepostOnly?.() }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14 }}
+              >
+                <Icon name="repeat" size={22} color="#fff" />
+                <Text style={{ color: '#fff', fontSize: 16 }}>Repost Only</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        </Modal>
       </View>
     </Modal>
   )

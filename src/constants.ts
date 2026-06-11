@@ -32,7 +32,6 @@ export const VIEW_DEFINITIONS: Record<ViewId, { label: string }> = {
   commerce: { label: 'commerce' },
   vaults: { label: 'vaults' },
   messages: { label: 'messages' },
-  groups: { label: 'groups' },
   notifications: { label: 'notifications' },
   locations: { label: 'locations' },
   liked: { label: 'liked' },
@@ -47,15 +46,31 @@ export const VIEW_DEFINITIONS: Record<ViewId, { label: string }> = {
   profile: { label: 'profile' },
 }
 
-export const ALL_VIEW_IDS: ViewId[] = [
+export const SUB_VIEW_IDS: ViewId[] = [
+  'liked',
+  'reservations',
+  'bookmarks',
+  'drafts',
+  'orders',
+  'language',
+  'accessibility',
+  'help',
+  'about',
+  'vaults',
+]
+
+export const MAIN_VIEW_IDS: ViewId[] = [
   'social',
   'locations',
   'events',
   'news',
   'commerce',
-  'vaults',
   'messages',
-  'groups',
+]
+
+export const ALL_VIEW_IDS: ViewId[] = [
+  ...MAIN_VIEW_IDS,
+  ...SUB_VIEW_IDS,
 ]
 
 export const MOCK_VAULTS = [

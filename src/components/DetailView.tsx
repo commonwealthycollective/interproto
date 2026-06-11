@@ -6,7 +6,7 @@ import { useVideoPlayer, VideoView } from 'expo-video'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '../context/NavigationContext'
 import { useAccent } from '../hooks/useAccent'
-import { MOCK_POSTS, MOCK_PROFILES, MOCK_MESSAGES, MOCK_EVENTS, MOCK_NEWS, MOCK_COMMERCE, MOCK_GROUPS } from '../constants'
+import { MOCK_POSTS, MOCK_PROFILES, MOCK_MESSAGES, MOCK_EVENTS, MOCK_NEWS, MOCK_COMMERCE } from '../constants'
 import type { PostMedia } from '../types'
 import Icon from './Icon'
 import Avatar from './Avatar'
@@ -51,7 +51,6 @@ const DetailView = React.memo(function DetailView({ detailAnim }: DetailViewProp
   const [messageText, setMessageText] = useState('')
   const [qty, setQty] = useState(1)
   const [orderPlaced, setOrderPlaced] = useState(false)
-  const [joinedGroup, setJoinedGroup] = useState(false)
   const [mediaViewerIndex, setMediaViewerIndex] = useState<number | null>(null)
   const [mediaViewerVisible, setMediaViewerVisible] = useState(false)
   const [repostModalVisible, setRepostModalVisible] = useState(false)
@@ -89,7 +88,6 @@ const DetailView = React.memo(function DetailView({ detailAnim }: DetailViewProp
       Animated.timing(actionOpacity, { toValue: 1, duration: 150, useNativeDriver: true }).start()
       setQty(1)
       setOrderPlaced(false)
-      setJoinedGroup(false)
       setCommentText('')
       setMessageText('')
       setMediaViewerVisible(false)
@@ -288,6 +286,18 @@ const DetailView = React.memo(function DetailView({ detailAnim }: DetailViewProp
             media={post.media}
             initialIndex={mediaViewerIndex || 0}
             onClose={() => setMediaViewerVisible(false)}
+            post={post}
+            isLiked={isLiked}
+            currentLikes={likeCount}
+            currentReposts={post.reposts || 0}
+            onLike={() => toggleLike(postId)}
+            onComment={() => {}}
+            onQuote={() => {
+              setQuotedPost({ author: post.author, text: post.text, media: post.media || [] })
+              closeDetail()
+              setTimeout(() => openDrawer('post'), 200)
+            }}
+            onRepostOnly={() => {}}
           />
         )}
       </ScrollView>
@@ -444,21 +454,6 @@ const DetailView = React.memo(function DetailView({ detailAnim }: DetailViewProp
     </ScrollView>
   )
 
-  const renderGroupsContent = (group: any) => (
-    <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-      <View style={{ padding: 16, paddingBottom: 80 }}>
-        <Text style={{ color: theme.color12.val, fontWeight: '700', fontSize: 20, marginBottom: 8 }}>{group.name}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-          <Icon name="people" size={16} color={accent} />
-          <Text style={{ color: accent, fontSize: 14 }}>{group.members} members</Text>
-          <Text style={{ color: accentMuted, fontSize: 14 }}>·</Text>
-          <Text style={{ color: accent, fontSize: 14 }}>Active {group.lastActive}</Text>
-        </View>
-        <Text style={{ color: theme.color12.val, fontSize: 15, lineHeight: 22, marginTop: 12 }}>{group.description}</Text>
-      </View>
-    </ScrollView>
-  )
-
   const renderMessagesContent = (conversationPartner: any) => {
     const messages = MOCK_MESSAGES[conversationPartner.username || conversationPartner] || []
     return (
@@ -552,8 +547,6 @@ const DetailView = React.memo(function DetailView({ detailAnim }: DetailViewProp
         return renderNewsContent(item)
       case 'commerce':
         return renderCommerceContent(item)
-      case 'groups':
-        return renderGroupsContent(item)
       case 'messages':
         return renderMessagesContent(item)
       case 'locations':
@@ -620,12 +613,6 @@ const DetailView = React.memo(function DetailView({ detailAnim }: DetailViewProp
             <AccentButton onPress={() => {}} title="Get Tickets" style={{ marginHorizontal: 0 }} />
           </View>
         )
-      case 'groups':
-        return (
-          <View style={[styles.actionBarInner, { backgroundColor: theme.background.val, paddingBottom: insets.bottom + 8 }]}>
-            <AccentButton onPress={() => setJoinedGroup(true)} title={joinedGroup ? 'Joined!' : 'Join Group'} style={{ marginHorizontal: 0 }} />
-          </View>
-        )
       case 'locations':
         return (
           <View style={[styles.actionBarInner, { backgroundColor: theme.background.val, paddingBottom: insets.bottom + 8 }]}>
@@ -666,7 +653,7 @@ const DetailView = React.memo(function DetailView({ detailAnim }: DetailViewProp
           <Icon name="arrow-back" size={24} color={accent} strokeWidth={1.875} />
         </TouchableOpacity>
         <Text style={{ color: theme.color12.val, fontWeight: '700', fontSize: 17, marginLeft: 8 }}>
-          {viewId === 'social' ? 'Post' : viewId === 'profile' ? activeDetail.item.displayName || activeDetail.item.username : viewId === 'messages' ? `@${activeDetail.item.username || activeDetail.item}` : viewId === 'events' ? 'Event' : viewId === 'news' ? 'Article' : viewId === 'commerce' ? 'Product' : viewId === 'groups' ? activeDetail.item.name : viewId === 'locations' ? 'Location' : viewId === 'notifications' ? 'Notification' : viewId.charAt(0).toUpperCase() + viewId.slice(1)}
+          {viewId === 'social' ? 'Post' : viewId === 'profile' ? activeDetail.item.displayName || activeDetail.item.username : viewId === 'messages' ? `@${activeDetail.item.username || activeDetail.item}` : viewId === 'events' ? 'Event' : viewId === 'news' ? 'Article' : viewId === 'commerce' ? 'Product' : viewId === 'locations' ? 'Location' : viewId === 'notifications' ? 'Notification' : viewId.charAt(0).toUpperCase() + viewId.slice(1)}
         </Text>
       </View>
 

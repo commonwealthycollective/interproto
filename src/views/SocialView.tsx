@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { View, TouchableOpacity, Modal, FlatList, Dimensions, Image } from 'react-native'
+import { View, TouchableOpacity, Modal, Dimensions, Image } from 'react-native'
 import { Text, useTheme } from 'tamagui'
 import { useVideoPlayer, VideoView } from 'expo-video'
 import { useNavigation } from '../context/NavigationContext'
@@ -8,6 +8,7 @@ import { MOCK_POSTS, MOCK_PROFILES } from '../constants'
 import type { PostMedia } from '../types'
 import Icon from '../components/Icon'
 import Avatar from '../components/Avatar'
+import MediaViewer from '../components/MediaViewer'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 const CONTENT_WIDTH = SCREEN_WIDTH - 32
@@ -49,7 +50,7 @@ export default React.memo(function SocialView() {
   const [likeCounts, setLikeCounts] = useState<Record<string, number>>({})
   const [repostCounts, setRepostCounts] = useState<Record<string, number>>({})
   const [repostModal, setRepostModal] = useState<string | null>(null)
-  const [mediaModal, setMediaModal] = useState<{ media: PostMedia[]; index: number } | null>(null)
+  const [mediaModal, setMediaModal] = useState<{ media: PostMedia[]; index: number; post: any } | null>(null)
 
   const filteredPosts = useMemo(() => {
     if (!state.currentVaultId) return MOCK_POSTS
@@ -185,7 +186,7 @@ export default React.memo(function SocialView() {
 
                   {post.media && post.media.length > 0 && (
                     <TouchableOpacity
-                      onPress={() => setMediaModal({ media: post.media, index: 0 })}
+                      onPress={() => setMediaModal({ media: post.media, index: 0, post })}
                       activeOpacity={0.9}
                       style={{ marginBottom: post.linkUrl ? 8 : 8, marginTop: 4 }}
                     >
@@ -266,38 +267,19 @@ export default React.memo(function SocialView() {
       </Modal>
 
       {mediaModal && (
-        <Modal visible animationType="fade" onRequestClose={() => setMediaModal(null)}>
-          <View style={{ flex: 1, backgroundColor: '#000' }}>
-            <TouchableOpacity
-              onPress={() => setMediaModal(null)}
-              style={{ position: 'absolute', top: 60, right: 16, zIndex: 10, width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.3)', alignItems: 'center', justifyContent: 'center' }}>
-                <View style={{ width: 14, height: 2, backgroundColor: '#fff', position: 'absolute', transform: [{ rotate: '45deg' }] }} />
-                <View style={{ width: 14, height: 2, backgroundColor: '#fff', position: 'absolute', transform: [{ rotate: '-45deg' }] }} />
-              </View>
-            </TouchableOpacity>
-            <FlatList
-              data={mediaModal.media}
-              keyExtractor={(_, i) => String(i)}
-              horizontal
-              pagingEnabled
-              initialScrollIndex={mediaModal.index}
-              getItemLayout={(_, index) => ({ length: SCREEN_WIDTH, offset: SCREEN_WIDTH * index, index })}
-              renderItem={({ item }) =>
-                item.type === 'video' ? (
-                  <View style={{ width: SCREEN_WIDTH, height: Dimensions.get('window').height, alignItems: 'center', justifyContent: 'center' }}>
-                    <FeedVideo uri={item.uri} />
-                  </View>
-                ) : (
-                  <View style={{ width: SCREEN_WIDTH, height: Dimensions.get('window').height, alignItems: 'center', justifyContent: 'center' }}>
-                    <Image source={{ uri: item.uri }} style={{ width: SCREEN_WIDTH, height: 300 }} resizeMode="contain" />
-                  </View>
-                )
-              }
-            />
-          </View>
-        </Modal>
+        <MediaViewer
+          media={mediaModal.media}
+          initialIndex={mediaModal.index}
+          onClose={() => setMediaModal(null)}
+          post={mediaModal.post}
+          isLiked={liked[mediaModal.post.id] ?? false}
+          currentLikes={likeCounts[mediaModal.post.id] ?? mediaModal.post.likes}
+          currentReposts={repostCounts[mediaModal.post.id] ?? mediaModal.post.reposts}
+          onLike={() => toggleLike(mediaModal.post.id)}
+          onComment={() => { const p = mediaModal.post; setMediaModal(null); openDetail('social', p) }}
+          onQuote={() => { const p = mediaModal.post; setMediaModal(null); handleQuote(p.id) }}
+          onRepostOnly={() => { const p = mediaModal.post; setMediaModal(null); handleRepostOnly(p.id) }}
+        />
       )}
     </View>
   )

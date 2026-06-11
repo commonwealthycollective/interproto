@@ -5,7 +5,6 @@ export type ViewId =
   | 'commerce'
   | 'vaults'
   | 'messages'
-  | 'groups'
   | 'notifications'
   | 'locations'
   | 'liked'

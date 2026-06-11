@@ -1,37 +1,41 @@
-import React, { useState, useMemo } from 'react'
-import { View, TouchableOpacity, StyleSheet, Animated, Modal, ScrollView } from 'react-native'
+import React, { useState, useMemo, useRef } from 'react'
+import { View, TouchableOpacity, StyleSheet, Animated, Modal, ScrollView, Dimensions } from 'react-native'
 import { Text, useTheme } from 'tamagui'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useNavigation } from '../context/NavigationContext'
 import { useAccent } from '../hooks/useAccent'
+import { SUB_VIEW_IDS } from '../constants'
 import Icon from './Icon'
 import Avatar from './Avatar'
 import type { ViewId } from '../types'
+
+const SCREEN_WIDTH = Dimensions.get('window').width
 
 interface MenuDrawerProps {
   menuAnim: Animated.Value
 }
 
-const MENU_ITEMS: { label: string; viewId: ViewId; icon: string }[] = [
-  { label: 'Liked', viewId: 'liked', icon: 'heart-outline' },
-  { label: 'Reservations', viewId: 'reservations', icon: 'calendar-outline' },
-  { label: 'Bookmarks', viewId: 'bookmarks', icon: 'pin' },
-  { label: 'Drafts', viewId: 'drafts', icon: 'layers-outline' },
-  { label: 'Orders', viewId: 'orders', icon: 'store-outline' },
-  { label: 'Language', viewId: 'language', icon: 'globe-outline' },
-  { label: 'Accessibility', viewId: 'accessibility', icon: 'accessibility' },
-  { label: 'Help', viewId: 'help', icon: 'help-circle' },
-  { label: 'About', viewId: 'about', icon: 'chatbubble-outline' },
+const MENU_ITEMS: { label: string; viewId: ViewId }[] = [
+  { label: 'Vaults', viewId: 'vaults' },
+  { label: 'Liked', viewId: 'liked' },
+  { label: 'Reservations', viewId: 'reservations' },
+  { label: 'Bookmarks', viewId: 'bookmarks' },
+  { label: 'Drafts', viewId: 'drafts' },
+  { label: 'Orders', viewId: 'orders' },
+  { label: 'Language', viewId: 'language' },
+  { label: 'Accessibility', viewId: 'accessibility' },
+  { label: 'Help', viewId: 'help' },
+  { label: 'About', viewId: 'about' },
 ]
 
 const PROFILE_OPTIONS = ['screennam3', 'alex_c', 'mayalee']
 
 const MenuDrawer = React.memo(function MenuDrawer({ menuAnim }: MenuDrawerProps) {
   const theme = useTheme()
-  const { accent, accentMuted, def } = useAccent()
+  const { accent, accentMuted } = useAccent()
   const { state, dispatch, switchView, hideMenu, openDetail, openDrawer } = useNavigation()
   const insets = useSafeAreaInsets()
+  const prevViewRef = useRef<ViewId | null>(null)
   const [showProfiles, setShowProfiles] = useState(false)
 
   const backdropOpacity = useMemo(() => menuAnim.interpolate({
@@ -39,14 +43,25 @@ const MenuDrawer = React.memo(function MenuDrawer({ menuAnim }: MenuDrawerProps)
     outputRange: [0, 0.5],
   }), [menuAnim])
 
-  const contentScale = useMemo(() => menuAnim.interpolate({
+  const contentTranslateX = useMemo(() => menuAnim.interpolate({
     inputRange: [0, 1],
-    outputRange: [0.9, 1],
+    outputRange: [-SCREEN_WIDTH, 0],
   }), [menuAnim])
 
   const handleMenuItem = (viewId: ViewId) => {
+    if (SUB_VIEW_IDS.includes(viewId)) {
+      prevViewRef.current = state.currentView
+    }
     hideMenu()
     switchView(viewId)
+  }
+
+  const handleClose = () => {
+    hideMenu()
+    if (prevViewRef.current && SUB_VIEW_IDS.includes(state.currentView as ViewId)) {
+      switchView(prevViewRef.current)
+      prevViewRef.current = null
+    }
   }
 
   const handleEditProfile = () => {
@@ -60,11 +75,14 @@ const MenuDrawer = React.memo(function MenuDrawer({ menuAnim }: MenuDrawerProps)
     openDetail('profile', profile)
   }
 
-  const handleThemeToggle = (themeOverride: 'light' | 'dark' | null) => {
-    dispatch({ type: 'SET_THEME_OVERRIDE', theme: themeOverride })
+  const handleThemeToggle = () => {
+    const isDark = (state.themeOverride ?? 'light') === 'dark'
+    dispatch({ type: 'SET_THEME_OVERRIDE', theme: isDark ? 'light' : 'dark' })
   }
 
   if (!state.showMenu) return null
+
+  const isDark = (state.themeOverride ?? 'light') === 'dark'
 
   return (
     <View style={styles.container} pointerEvents={state.showMenu ? 'auto' : 'none'}>
@@ -76,18 +94,19 @@ const MenuDrawer = React.memo(function MenuDrawer({ menuAnim }: MenuDrawerProps)
         />
       </Animated.View>
 
-      <Animated.View style={[styles.content, { transform: [{ scale: contentScale }], backgroundColor: theme.background.val, paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <Animated.View style={[styles.content, { transform: [{ translateX: contentTranslateX }], backgroundColor: theme.background.val, paddingTop: insets.top }]}>
+        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.header}>
-            <View style={styles.headerTop}>
-              <TouchableOpacity onPress={handleOpenProfile} style={styles.headerLeft}>
-                <Avatar seed="screennam3" size={48} />
-                <Text style={[styles.username, { color: theme.color12.val }]}>screennam3</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={hideMenu}>
-                <Icon name="close" size={24} color={accent} />
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity onPress={handleClose} style={styles.closeBtn}>
+              <Icon name="close" size={22} color={accent} strokeWidth={1.875} />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handleOpenProfile} style={styles.avatarWrap}>
+              <Avatar seed="screennam3" size={72} />
+            </TouchableOpacity>
+
+            <Text style={[styles.username, { color: theme.color12.val }]}>screennam3</Text>
+            <Text style={[styles.bio, { color: accent }]}>Running trails & river views</Text>
 
             <View style={styles.pillRow}>
               <TouchableOpacity onPress={handleEditProfile} style={[styles.pill, { backgroundColor: accentMuted }]}>
@@ -107,54 +126,31 @@ const MenuDrawer = React.memo(function MenuDrawer({ menuAnim }: MenuDrawerProps)
               onPress={() => handleMenuItem(item.viewId)}
               style={styles.menuItem}
             >
-              <Icon name={item.icon} size={22} color={accent} strokeWidth={1.875} />
               <Text style={[styles.menuItemText, { color: theme.color12.val }]}>{item.label}</Text>
             </TouchableOpacity>
           ))}
+
+          <View style={{ flex: 1 }} />
+
+          <View style={[styles.separator, { backgroundColor: accentMuted }]} />
 
           <TouchableOpacity
             onPress={() => setShowProfiles(true)}
             style={styles.menuItem}
           >
-            <Icon name="people" size={22} color={accent} strokeWidth={1.875} />
             <Text style={[styles.menuItemText, { color: theme.color12.val }]}>Switch Profiles</Text>
           </TouchableOpacity>
         </ScrollView>
 
-        <View style={[styles.bottomSeparator, { backgroundColor: accentMuted }]} />
-
-        <View style={styles.bottomSection}>
-          <View style={styles.themeRow}>
-            <View style={styles.themeToggle}>
-              <TouchableOpacity
-                onPress={() => handleThemeToggle(state.themeOverride === 'light' ? null : 'light')}
-                style={[styles.themeBtn, styles.themeBtnLeft, { backgroundColor: state.themeOverride === 'light' ? 'transparent' : accentMuted, overflow: 'hidden' }]}
-              >
-                {state.themeOverride === 'light' && (
-                  <View style={StyleSheet.absoluteFill}>
-                    <LinearGradient colors={def.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />
-                  </View>
-                )}
-                <Text style={[styles.themeBtnText, { color: state.themeOverride === 'light' ? (def.name === 'White' ? theme.color12.val : '#fff') : accent }]}>Light</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => handleThemeToggle(state.themeOverride === 'dark' ? null : 'dark')}
-                style={[styles.themeBtn, styles.themeBtnRight, { backgroundColor: state.themeOverride === 'dark' ? 'transparent' : accentMuted, overflow: 'hidden' }]}
-              >
-                {state.themeOverride === 'dark' && (
-                  <View style={StyleSheet.absoluteFill}>
-                    <LinearGradient colors={def.gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ flex: 1 }} />
-                  </View>
-                )}
-                <Text style={[styles.themeBtnText, { color: state.themeOverride === 'dark' ? (def.name === 'White' ? theme.color12.val : '#fff') : accent }]}>Dark</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={[styles.accentCircle, { backgroundColor: accent }]} />
+        <View style={[styles.bottomSection, { paddingBottom: insets.bottom }]}>
+          <View style={styles.bottomRow}>
+            <TouchableOpacity style={styles.logoutBtn}>
+              <Text style={styles.logoutText}>Log out</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleThemeToggle} style={[styles.themeToggleBtn, { backgroundColor: isDark ? '#fff' : '#000' }]}>
+              <Text style={[styles.themeToggleText, { color: isDark ? '#000' : '#fff' }]}>{isDark ? 'Light' : 'Dark'}</Text>
+            </TouchableOpacity>
           </View>
-
-          <TouchableOpacity style={styles.logoutBtn}>
-            <Text style={styles.logoutText}>Log out</Text>
-          </TouchableOpacity>
         </View>
       </Animated.View>
 
@@ -212,38 +208,45 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   content: {
-    flex: 1,
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: SCREEN_WIDTH,
   },
   scrollView: {
     flex: 1,
   },
   header: {
-    paddingHorizontal: 16,
+    alignItems: 'center',
     paddingTop: 12,
-    marginBottom: 4,
+    paddingBottom: 16,
+    paddingHorizontal: 16,
   },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
+  closeBtn: {
+    alignSelf: 'flex-start',
+    marginBottom: 8,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+  avatarWrap: {
+    marginBottom: 8,
   },
   username: {
     fontWeight: '700',
-    fontSize: 18,
+    fontSize: 20,
+    textAlign: 'center',
+  },
+  bio: {
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 2,
+    marginBottom: 12,
   },
   pillRow: {
     flexDirection: 'row',
     gap: 8,
   },
   pill: {
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    padding: 8,
     borderRadius: 20,
   },
   pillText: {
@@ -255,58 +258,31 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
   menuItemText: {
     fontSize: 16,
-    fontWeight: '600',
-  },
-  bottomSeparator: {
-    height: 1,
-    marginHorizontal: 16,
+    fontWeight: '400',
   },
   bottomSection: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
   },
-  themeRow: {
+  bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
   },
-  themeToggle: {
-    flexDirection: 'row',
-    height: 40,
+  themeToggleBtn: {
+    padding: 8,
     borderRadius: 10,
-    overflow: 'hidden',
-  },
-  themeBtn: {
-    width: 80,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  themeBtnLeft: {
-    borderTopLeftRadius: 10,
-    borderBottomLeftRadius: 10,
-  },
-  themeBtnRight: {
-    borderTopRightRadius: 10,
-    borderBottomRightRadius: 10,
-  },
-  themeBtnText: {
+  themeToggleText: {
     fontWeight: '700',
-    fontSize: 14,
-    zIndex: 1,
-  },
-  accentCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    fontSize: 15,
   },
   logoutBtn: {
     paddingVertical: 8,
