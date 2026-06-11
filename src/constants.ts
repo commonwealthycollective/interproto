@@ -49,13 +49,13 @@ export const VIEW_DEFINITIONS: Record<ViewId, { label: string }> = {
 
 export const ALL_VIEW_IDS: ViewId[] = [
   'social',
+  'locations',
   'events',
   'news',
   'commerce',
   'vaults',
   'messages',
   'groups',
-  'locations',
 ]
 
 export const MOCK_VAULTS = [
